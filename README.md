@@ -1,1 +1,1 @@
-# b
+# akhane je sob ebook er details and add kora hoiche sob kichu internet er public source or ai generated kono copyright content use kora hoi nai jodi kono problem hoi tahole ay mail korun tarekamibro@gmail.com
