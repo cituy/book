@@ -1,0 +1,34 @@
+[
+  {
+    "wallet": "Bkash",
+    "bn": "বিকাশ",
+    "number": "01814540845",
+    "method": "bkash",
+    "icon": "https://iili.io/KmFC1cu.jpg",
+    "status": true
+  },
+  {
+    "wallet": "Nagad",
+    "bn": "নগদ",
+    "number": "01619577916",
+    "method": "nagad",
+    "icon": "https://iili.io/KmFCM9j.jpg",
+    "status": true
+  },
+  {
+    "wallet": "Roket",
+    "bn": "রকেট",
+    "number": "01871626060",
+    "method": "roket",
+    "icon": "https://iili.io/KmFC0Fe.jpg",
+    "status": true
+  },
+  {
+    "wallet": "Upay",
+    "bn": "উপায়",
+    "number": "01871626060",
+    "method": "upay",
+    "icon": "https://iili.io/KmFCE8b.jpg",
+    "status": false
+  }
+]
