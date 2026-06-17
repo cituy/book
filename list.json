@@ -1,8 +1,8 @@
 {
  "fields": ["id","uniqueid","book","booken","jsonformat","category","description","writer","cover","banner","status","payable","price","readstatus","urlroute","jsonurl","rokoid"],
   "data": [
-    ["porijan","102030","পরীজান","Porijan","common","love","","ঈসিতা রহমান সানজিদা","https://i.ibb.co.com/pj15xjLZ/20471-Picsart-Ai-Image-Enhancer.jpg","https://i.ibb.co.com/DD4W1zNM/19565-Picsart-Ai-Image-Enhancer.jpg","available","paid","25","popular","porijan_uponash","","87543"],
-    ["ridhmaiyarprem","111213","রিদ মায়ার প্রেম গাঁথা","Ridh maiyar prem","common","love","","রিক্তা ইসলাম মায়া","https://i.ibb.co.com/0RJq8Hn7/20475-Picsart-Ai-Image-Enhancer.jpg","https://i.ibb.co.com/p6dX7bgx/20332-Picsart-Ai-Image-Enhancer.png","available","paid","25","popular","ridh_maiyar","","88545"],
-    ["kathgolap","212345","কাঠ গোলাপ","khat golap","regular","love","","ইমরান হোসাইন আদিব","https://i.ibb.co.com/BKSqZCcF/1776001870456.png","https://i.ibb.co.com/W4JNgPxq/20227-Picsart-Ai-Image-Enhancer.jpg","available","free","0","regular","katg_golap","https://cdn.jsdelivr.net/gh/cituy/book/kathgolap.json","78656"]
+    ["porijan","102030","পরীজান","Porijan","common","love","","ঈসিতা রহমান সানজিদা","https://i.ibb.co.com/pj15xjLZ/20471-Picsart-Ai-Image-Enhancer.jpg","https://i.ibb.co.com/DD4W1zNM/19565-Picsart-Ai-Image-Enhancer.jpg","available","paid","25","popular","porijan_uponash","","472175"],
+    ["ridhmaiyarprem","111213","রিদ মায়ার প্রেম গাঁথা","Ridh maiyar prem","common","love","","রিক্তা ইসলাম মায়া","https://i.ibb.co.com/0RJq8Hn7/20475-Picsart-Ai-Image-Enhancer.jpg","https://i.ibb.co.com/p6dX7bgx/20332-Picsart-Ai-Image-Enhancer.png","available","paid","25","popular","ridh_maiyar","","476307"],
+    ["kathgolap","212345","কাঠ গোলাপ","khat golap","regular","love","","ইমরান হোসাইন আদিব","https://i.ibb.co.com/BKSqZCcF/1776001870456.png","https://i.ibb.co.com/W4JNgPxq/20227-Picsart-Ai-Image-Enhancer.jpg","available","free","0","regular","katg_golap","https://cdn.jsdelivr.net/gh/cituy/book/kathgolap.json","263825"]
   ]
 }
