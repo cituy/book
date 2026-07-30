@@ -29,6 +29,6 @@
     "number": "01871626060",
     "method": "upay",
     "icon": "https://iili.io/KmFCE8b.jpg",
-    "status": false
+    "status": true
   }
 ]
