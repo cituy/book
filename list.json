@@ -177,7 +177,7 @@
       "শাহজাহান তন্ময়",
       "Shahjahan Tonmoy",
       "common",
-      "গল্প ও উপন্যাস",
+      "রোমান্টিক",
       "",
       "নাবিলা ইষ্ক",
       "https://i.ibb.co/4ZtFZsSP/26885.png",
@@ -322,6 +322,25 @@
       "ridh_maiyar",
       "",
       "476307"
+    ],
+    [
+      "kathgolap",
+      "212345",
+      "কাঠগোলাপ",
+      "khat golap",
+      "regular",
+      "love",
+      "",
+      "ইমরান হোসাইন আদিব",
+      "https://i.ibb.co.com/BKSqZCcF/1776001870456.png",
+      "https://i.ibb.co.com/W4JNgPxq/20227-Picsart-Ai-Image-Enhancer.jpg",
+      "available",
+      "free",
+      "0",
+      "regular",
+      "katg_golap",
+      "https://cdn.jsdelivr.net/gh/cituy/book/kathgolap.json",
+      "263825"
     ]
   ]
 }
