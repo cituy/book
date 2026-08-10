@@ -13,12 +13,13 @@
       list: p.get("list"),
       previous: p.get("previous"),
       next: p.get("next"),
-      category: p.get("category")
+      category: p.get("category"),
+      readstatus: p.get("readstatus")
     };
   }
 
   const params = getParams();
-  const hasAnyRoute = params.id || params.list !== null || params.previous !== null || params.next !== null || params.category;
+  const hasAnyRoute = params.id || params.list !== null || params.previous !== null || params.next !== null || params.category || params.readstatus;
   if (!hasAnyRoute) {
     location.replace("https://muluot.com");
     return;
@@ -61,6 +62,7 @@
     const payableIdx = idx("payable");
     const categoryIdx = idx("category");
     const statusIdx = idx("status");
+    const readstatusIdx = idx("readstatus"); // new field
 
     // ========== ?id=605146 ==========
     if (params.id) {
@@ -82,7 +84,8 @@
         writer: found[writerIdx] || "",
         payable: found[payableIdx] || "",
         category: found[categoryIdx] || "",
-        status: found[statusIdx] || ""
+        status: found[statusIdx] || "",
+        readstatus: found[readstatusIdx] || ""
       });
     }
 
@@ -93,10 +96,12 @@
       const freeData = [];
       const premiumData = [];
       const byCategory = {};
+      const byReadstatus = {};
 
       for (const row of data) {
         const payable = String(row[payableIdx] || "").toLowerCase();
         const cat = String(row[categoryIdx] || "অন্যান্য").trim() || "অন্যান্য";
+        const rs = String(row[readstatusIdx] || "regular").trim().toLowerCase() || "regular";
 
         if (payable === "free" || payable === "0" || row[priceIdx] === "0" || row[priceIdx] === 0) {
           if (freeData.length < count) freeData.push(row);
@@ -108,21 +113,28 @@
         if (byCategory[cat].length < count) {
           byCategory[cat].push(row);
         }
+
+        if (!byReadstatus[rs]) byReadstatus[rs] = [];
+        if (byReadstatus[rs].length < count) {
+          byReadstatus[rs].push(row);
+        }
       }
 
       return sendJSON({
         fields: fields,
         free: freeData,
         premium: premiumData,
-        categories: byCategory
+        categories: byCategory,
+        readstatus: byReadstatus
       });
     }
 
-    // ========== ?previous=...&next=...&category=... ==========
-    if (params.next !== null || params.previous !== null || params.category) {
+    // ========== ?previous=...&next=...&category=...&readstatus=... ==========
+    if (params.next !== null || params.previous !== null || params.category || params.readstatus) {
       let offset = 0;
       let take = 20;
       let categoryFilter = (params.category || "both").toLowerCase().trim();
+      let readstatusFilter = (params.readstatus || "").toLowerCase().trim();
 
       if (params.previous !== null && params.previous !== "") {
         offset = Math.max(0, parseInt(params.previous, 10) || 0);
@@ -133,6 +145,7 @@
 
       let filtered = data;
 
+      // 1. payable filter (free / paid)
       if (categoryFilter === "free") {
         filtered = data.filter(row => {
           const payable = String(row[payableIdx] || "").toLowerCase();
@@ -143,10 +156,21 @@
           const payable = String(row[payableIdx] || "").toLowerCase();
           return payable !== "free" && payable !== "0" && row[priceIdx] !== "0" && row[priceIdx] !== 0;
         });
-      } else if (categoryFilter !== "both" && categoryFilter !== "all" && categoryFilter !== "") {
+      }
+      // 2. normal category filter
+      else if (categoryFilter !== "both" && categoryFilter !== "all" && categoryFilter !== "") {
         filtered = data.filter(row => {
           const cat = String(row[categoryIdx] || "").toLowerCase();
           return cat === categoryFilter || cat.includes(categoryFilter);
+        });
+      }
+
+      // 3. readstatus filter (popular / regular / trending / regular trending)
+      if (readstatusFilter) {
+        filtered = filtered.filter(row => {
+          const rs = String(row[readstatusIdx] || "").toLowerCase().trim();
+          // exact match or partial (for "regular trending")
+          return rs === readstatusFilter || rs.includes(readstatusFilter) || readstatusFilter.includes(rs);
         });
       }
 
