@@ -1,229 +1,174 @@
 <!DOCTYPE html>
-<html lang="bn">
+<html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Book API</title>
-  <style>
-    body {
-      font-family: system-ui, -apple-system, sans-serif;
-      background: #0f0f0f;
-      color: #e0e0e0;
-      margin: 0;
-      padding: 20px;
-    }
-    pre {
-      background: #1a1a1a;
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 16px;
-      overflow-x: auto;
-      white-space: pre-wrap;
-      word-break: break-word;
-      font-size: 14px;
-      line-height: 1.5;
-    }
-    .error {
-      color: #ff6b6b;
-    }
-    .loading {
-      color: #888;
-    }
-  </style>
+  <title></title>
 </head>
 <body>
-  <pre id="output" class="loading">Loading...</pre>
+<script>
+(async function () {
+  function getParams() {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      id: params.get("id"),
+      list: params.get("list"),
+      previous: params.get("previous"),
+      next: params.get("next"),
+      category: params.get("category")
+    };
+  }
 
-  <script>
-    (async function () {
-      const output = document.getElementById("output");
+  // কোনো route না থাকলে redirect
+  const params = getParams();
+  const hasAnyRoute = params.id || params.list !== null || params.previous !== null || params.next !== null || params.category;
+  if (!hasAnyRoute) {
+    location.replace("https://muluot.com");
+    return;
+  }
 
-      function getParams() {
-        const params = new URLSearchParams(window.location.search);
-        return {
-          id: params.get("id"),
-          list: params.get("list"),
-          previous: params.get("previous"),
-          next: params.get("next"),
-          category: params.get("category")
+  // pure raw JSON output (no UI)
+  function sendJSON(data) {
+    document.open();
+    document.write(JSON.stringify(data));
+    document.close();
+  }
+
+  function error(msg, code) {
+    sendJSON({ error: true, message: msg, code: code || 400 });
+  }
+
+  try {
+    const res = await fetch("/list.json", { cache: "no-store" });
+    if (!res.ok) throw new Error("list.json fetch failed: " + res.status);
+    const json = await res.json();
+
+    if (!json.fields || !Array.isArray(json.data)) {
+      throw new Error("Invalid list.json format");
+    }
+
+    const fields = json.fields;
+    const data = json.data;
+
+    function idx(name) {
+      return fields.indexOf(name);
+    }
+
+    const idIdx = idx("id");
+    const uniqueidIdx = idx("uniqueid");
+    const priceIdx = idx("price");
+    const payableIdx = idx("payable");
+    const categoryIdx = idx("category");
+
+    // ========== ?id=605146 ==========
+    if (params.id) {
+      const searchId = String(params.id).trim();
+      const found = data.find(row =>
+        String(row[uniqueidIdx]) === searchId ||
+        String(row[idIdx]) === searchId
+      );
+
+      if (!found) {
+        return error("Book not found for id: " + searchId, 404);
+      }
+
+      return sendJSON({
+        fields: fields,
+        data: [found]
+      });
+    }
+
+    // ========== ?list=20 ==========
+    if (params.list !== null && params.list !== undefined) {
+      const count = Math.max(1, parseInt(params.list, 10) || 20);
+
+      const freeData = [];
+      const premiumData = [];
+      const byCategory = {};
+
+      for (const row of data) {
+        const payable = String(row[payableIdx] || "").toLowerCase();
+        const cat = String(row[categoryIdx] || "অন্যান্য").trim() || "অন্যান্য";
+
+        if (payable === "free" || payable === "0" || row[priceIdx] === "0" || row[priceIdx] === 0) {
+          if (freeData.length < count) freeData.push(row);
+        } else {
+          if (premiumData.length < count) premiumData.push(row);
+        }
+
+        if (!byCategory[cat]) byCategory[cat] = [];
+        if (byCategory[cat].length < count) {
+          byCategory[cat].push(row);
+        }
+      }
+
+      const categories = {};
+      for (const cat in byCategory) {
+        categories[cat] = {
+          fields: fields,
+          data: byCategory[cat]
         };
       }
 
-      // আগে চেক করি — কোনো route না থাকলে সাথে সাথে redirect
-      const params = getParams();
-      const hasAnyRoute = params.id || params.list !== null || params.previous !== null || params.next !== null || params.category;
-      if (!hasAnyRoute) {
-        location.replace("https://muluot.com");
-        return;
+      return sendJSON({
+        free: {
+          fields: fields,
+          data: freeData
+        },
+        premium: {
+          fields: fields,
+          data: premiumData
+        },
+        categories: categories
+      });
+    }
+
+    // ========== ?previous=20&next=20&category=... ==========
+    if (params.next !== null || params.previous !== null || params.category) {
+      let offset = 0;
+      let take = 20;
+      let categoryFilter = (params.category || "both").toLowerCase().trim();
+
+      if (params.previous !== null && params.previous !== "") {
+        offset = Math.max(0, parseInt(params.previous, 10) || 0);
+      }
+      if (params.next !== null && params.next !== "") {
+        take = Math.max(1, parseInt(params.next, 10) || 20);
       }
 
-      function sendJSON(data, status = 200) {
-        document.body.innerHTML = "";
-        document.body.style.cssText = "margin:0;padding:0;background:#111;color:#eee;font-family:monospace;";
-        const pre = document.createElement("pre");
-        pre.style.cssText = "margin:0;padding:16px;white-space:pre-wrap;word-break:break-word;";
-        pre.textContent = JSON.stringify(data, null, 2);
-        document.body.appendChild(pre);
-      }
+      let filtered = data;
 
-      function error(msg, code = 400) {
-        sendJSON({ error: true, message: msg, code }, code);
-      }
-
-      try {
-        const res = await fetch("/list.json", { cache: "no-store" });
-        if (!res.ok) throw new Error("list.json fetch failed: " + res.status);
-        const json = await res.json();
-
-        if (!json.fields || !Array.isArray(json.data)) {
-          throw new Error("Invalid list.json format");
-        }
-
-        const fields = json.fields;
-        const data = json.data;
-
-        function rowToObj(row) {
-          const obj = {};
-          fields.forEach((f, i) => {
-            obj[f] = row[i] !== undefined ? row[i] : "";
-          });
-          return obj;
-        }
-
-        function idx(name) {
-          return fields.indexOf(name);
-        }
-
-        const idIdx = idx("id");
-        const uniqueidIdx = idx("uniqueid");
-        const bookIdx = idx("book");
-        const bookenIdx = idx("booken");
-        const writerIdx = idx("writer");
-        const priceIdx = idx("price");
-        const payableIdx = idx("payable");
-        const categoryIdx = idx("category");
-        const statusIdx = idx("status");
-
-        // ========== Route 1: ?id=605146 ==========
-        if (params.id) {
-          const searchId = String(params.id).trim();
-          const found = data.find(row =>
-            String(row[uniqueidIdx]) === searchId ||
-            String(row[idIdx]) === searchId
-          );
-
-          if (!found) {
-            return error("Book not found for id: " + searchId, 404);
-          }
-
-          const obj = rowToObj(found);
-          return sendJSON({
-            id: obj.uniqueid || obj.id,
-            price: obj.price,
-            book: obj.book,
-            booken: obj.booken,
-            writer: obj.writer,
-            payable: obj.payable,
-            category: obj.category,
-            status: obj.status
-          });
-        }
-
-        // ========== Route 2: ?list=20 ==========
-        if (params.list !== null && params.list !== undefined) {
-          const limit = Math.max(1, parseInt(params.list, 10) || 20);
-
-          const freeBooks = [];
-          const premiumBooks = [];
-          const byCategory = {};
-
-          for (const row of data) {
-            const payable = String(row[payableIdx] || "").toLowerCase();
-            const cat = String(row[categoryIdx] || "অন্যান্য").trim() || "অন্যান্য";
-
-            if (payable === "free" || payable === "0" || row[priceIdx] === "0" || row[priceIdx] === 0) {
-              if (freeBooks.length < limit) freeBooks.push(rowToObj(row));
-            } else {
-              if (premiumBooks.length < limit) premiumBooks.push(rowToObj(row));
-            }
-
-            if (!byCategory[cat]) byCategory[cat] = [];
-            if (byCategory[cat].length < limit) {
-              byCategory[cat].push(rowToObj(row));
-            }
-          }
-
-          return sendJSON({
-            limit: limit,
-            free: freeBooks,
-            premium: premiumBooks,
-            categories: byCategory
-          });
-        }
-
-        // ========== Route 3: ?previous=20&next=20&category=... ==========
-        if (params.next !== null || params.previous !== null || params.category) {
-          let offset = 0;
-          let limit = 20;
-          let categoryFilter = (params.category || "both").toLowerCase().trim();
-
-          if (params.previous !== null && params.previous !== "") {
-            offset = Math.max(0, parseInt(params.previous, 10) || 0);
-          }
-          if (params.next !== null && params.next !== "") {
-            limit = Math.max(1, parseInt(params.next, 10) || 20);
-          }
-
-          let filtered = data;
-
-          if (categoryFilter === "free") {
-            filtered = data.filter(row => {
-              const payable = String(row[payableIdx] || "").toLowerCase();
-              return payable === "free" || payable === "0" || row[priceIdx] === "0" || row[priceIdx] === 0;
-            });
-          } else if (categoryFilter === "paid" || categoryFilter === "premium") {
-            filtered = data.filter(row => {
-              const payable = String(row[payableIdx] || "").toLowerCase();
-              return payable !== "free" && payable !== "0" && row[priceIdx] !== "0" && row[priceIdx] !== 0;
-            });
-          } else if (categoryFilter !== "both" && categoryFilter !== "all" && categoryFilter !== "") {
-            filtered = data.filter(row => {
-              const cat = String(row[categoryIdx] || "").toLowerCase();
-              return cat === categoryFilter || cat.includes(categoryFilter);
-            });
-          }
-
-          const total = filtered.length;
-          const page = filtered.slice(offset, offset + limit).map(rowToObj);
-
-          return sendJSON({
-            category: categoryFilter,
-            previous: offset,
-            next: limit,
-            total: total,
-            count: page.length,
-            has_more: offset + limit < total,
-            data: page
-          });
-        }
-
-        // Default: show help
-        sendJSON({
-          message: "Book API",
-          usage: {
-            "by_id": "?id=605146",
-            "list_summary": "?list=20",
-            "paginated": "?previous=0&next=20&category=both",
-            "category_options": ["free", "paid", "both", "or any category name from list.json"]
-          },
-          total_books: data.length,
-          fields: fields
+      if (categoryFilter === "free") {
+        filtered = data.filter(row => {
+          const payable = String(row[payableIdx] || "").toLowerCase();
+          return payable === "free" || payable === "0" || row[priceIdx] === "0" || row[priceIdx] === 0;
         });
-
-      } catch (err) {
-        error(err.message || "Unknown error", 500);
+      } else if (categoryFilter === "paid" || categoryFilter === "premium") {
+        filtered = data.filter(row => {
+          const payable = String(row[payableIdx] || "").toLowerCase();
+          return payable !== "free" && payable !== "0" && row[priceIdx] !== "0" && row[priceIdx] !== 0;
+        });
+      } else if (categoryFilter !== "both" && categoryFilter !== "all" && categoryFilter !== "") {
+        filtered = data.filter(row => {
+          const cat = String(row[categoryIdx] || "").toLowerCase();
+          return cat === categoryFilter || cat.includes(categoryFilter);
+        });
       }
-    })();
-  </script>
+
+      const page = filtered.slice(offset, offset + take);
+
+      return sendJSON({
+        fields: fields,
+        data: page
+      });
+    }
+
+    // fallback
+    sendJSON({ fields: fields, data: [] });
+
+  } catch (err) {
+    error(err.message || "Unknown error", 500);
+  }
+})();
+</script>
 </body>
 </html>
