@@ -2,23 +2,21 @@
 <html>
 <head>
   <meta charset="UTF-8">
-  <title></title>
 </head>
 <body>
 <script>
 (async function () {
   function getParams() {
-    const params = new URLSearchParams(window.location.search);
+    const p = new URLSearchParams(window.location.search);
     return {
-      id: params.get("id"),
-      list: params.get("list"),
-      previous: params.get("previous"),
-      next: params.get("next"),
-      category: params.get("category")
+      id: p.get("id"),
+      list: p.get("list"),
+      previous: p.get("previous"),
+      next: p.get("next"),
+      category: p.get("category")
     };
   }
 
-  // কোনো route না থাকলে redirect
   const params = getParams();
   const hasAnyRoute = params.id || params.list !== null || params.previous !== null || params.next !== null || params.category;
   if (!hasAnyRoute) {
@@ -26,10 +24,11 @@
     return;
   }
 
-  // pure raw JSON output (no UI)
   function sendJSON(data) {
+    // pure JSON only — no HTML
+    const json = JSON.stringify(data);
     document.open();
-    document.write(JSON.stringify(data));
+    document.write(json);
     document.close();
   }
 
@@ -55,9 +54,13 @@
 
     const idIdx = idx("id");
     const uniqueidIdx = idx("uniqueid");
+    const bookIdx = idx("book");
+    const bookenIdx = idx("booken");
+    const writerIdx = idx("writer");
     const priceIdx = idx("price");
     const payableIdx = idx("payable");
     const categoryIdx = idx("category");
+    const statusIdx = idx("status");
 
     // ========== ?id=605146 ==========
     if (params.id) {
@@ -72,8 +75,14 @@
       }
 
       return sendJSON({
-        fields: fields,
-        data: [found]
+        id: found[uniqueidIdx] || found[idIdx] || "",
+        price: found[priceIdx] || "0",
+        book: found[bookIdx] || "",
+        booken: found[bookenIdx] || "",
+        writer: found[writerIdx] || "",
+        payable: found[payableIdx] || "",
+        category: found[categoryIdx] || "",
+        status: found[statusIdx] || ""
       });
     }
 
@@ -101,28 +110,15 @@
         }
       }
 
-      const categories = {};
-      for (const cat in byCategory) {
-        categories[cat] = {
-          fields: fields,
-          data: byCategory[cat]
-        };
-      }
-
       return sendJSON({
-        free: {
-          fields: fields,
-          data: freeData
-        },
-        premium: {
-          fields: fields,
-          data: premiumData
-        },
-        categories: categories
+        fields: fields,
+        free: freeData,
+        premium: premiumData,
+        categories: byCategory
       });
     }
 
-    // ========== ?previous=20&next=20&category=... ==========
+    // ========== ?previous=...&next=...&category=... ==========
     if (params.next !== null || params.previous !== null || params.category) {
       let offset = 0;
       let take = 20;
@@ -162,7 +158,6 @@
       });
     }
 
-    // fallback
     sendJSON({ fields: fields, data: [] });
 
   } catch (err) {
