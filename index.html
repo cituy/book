@@ -10,6 +10,7 @@
     const p = new URLSearchParams(window.location.search);
     return {
       id: p.get("id"),
+      rokoid: p.get("rokoid"),
       list: p.get("list"),
       previous: p.get("previous"),
       next: p.get("next"),
@@ -19,7 +20,7 @@
   }
 
   const params = getParams();
-  const hasAnyRoute = params.id || params.list !== null || params.previous !== null || params.next !== null || params.category || params.readstatus;
+  const hasAnyRoute = params.id || params.rokoid || params.list !== null || params.previous !== null || params.next !== null || params.category || params.readstatus;
   if (!hasAnyRoute) {
     location.replace("https://muluot.com");
     return;
@@ -63,6 +64,7 @@
     const categoryIdx = idx("category");
     const statusIdx = idx("status");
     const readstatusIdx = idx("readstatus"); // new field
+    const rokoidIdx = idx("rokoid");
 
     // ========== ?id=605146 ==========
     if (params.id) {
@@ -74,6 +76,30 @@
 
       if (!found) {
         return error("Book not found for id: " + searchId, 404);
+      }
+
+      return sendJSON({
+        id: found[uniqueidIdx] || found[idIdx] || "",
+        price: found[priceIdx] || "0",
+        book: found[bookIdx] || "",
+        booken: found[bookenIdx] || "",
+        writer: found[writerIdx] || "",
+        payable: found[payableIdx] || "",
+        category: found[categoryIdx] || "",
+        status: found[statusIdx] || "",
+        readstatus: found[readstatusIdx] || ""
+      });
+    }
+
+    // ========== ?rokoid=402526 ==========
+    if (params.rokoid) {
+      const searchRokoid = String(params.rokoid).trim();
+      const found = data.find(row =>
+        String(row[rokoidIdx]).trim() === searchRokoid
+      );
+
+      if (!found) {
+        return error("Book not found for rokoid: " + searchRokoid, 404);
       }
 
       return sendJSON({
